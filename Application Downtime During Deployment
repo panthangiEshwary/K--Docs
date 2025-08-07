@@ -1,0 +1,93 @@
+1) Application Downtime During Deployment
+
+Problem:
+When you update your application using a Deployment, Kubernetes may:
+Terminate old pods
+Then create new pods
+
+But if the new pods aren't ready yet, and the old ones are already gone → ⚠️ Application downtime.
+
+Why Does This Happen?
+This usually happens when:
+
+No Readiness Probes are defined
+→ K8s assumes a pod is ready as soon as it's running
+Default rollout strategy is used
+→ K8s kills old pods too soon
+Resource constraints
+→ Not enough room to spin up new pods before deleting the old ones
+
+Solution: Use RollingUpdate Strategy + Readiness Probes
+
+You will write a Deployment YAML that:
+Runs a web app (e.g., NGINX)
+Uses RollingUpdate strategy with safe settings
+Includes readiness and liveness probes
+Has CPU/memory limits
+#readinessProbe
+-Checks when the container is ready to serve traffic.
+What it does:
+Kubernetes will not send traffic to the Pod (via Services) until this probe passes.
+It helps during start-up, so traffic isn’t routed too early.
+#livenessProbe
+Purpose:
+Checks if the container is still alive.
+
+🧠 What it does:
+If this probe fails, Kubernetes will restart the container.
+Useful to recover from deadlocks or crashes that don’t kill the process.
+
+
+*****************
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1          # Allow 1 extra pod during update
+      maxUnavailable: 0    # No pod goes down until replacement is ready
+  selector:
+    matchLabels:
+      app: nginx            #SELECT pods with this label
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.25
+        ports:
+        - containerPort: 80
+        readinessProbe:
+          httpGet:
+            path: /                                 #Probes the root path / of the container
+            port: 80                                #Checks on port 80
+          initialDelaySeconds: 5                    #Number of seconds after the container has started before liveness probes are initiated.
+          periodSeconds: 5                          #Repeats every 5 seconds
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 15                   #Starts after 15 seconds (to let app boot)
+          periodSeconds: 20                         #Probes every 20 seconds
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "100m"
+          limits:
+            memory: "128Mi"
+            cpu: "250m"
+*******************************
+
+
+
+ 
+
+
