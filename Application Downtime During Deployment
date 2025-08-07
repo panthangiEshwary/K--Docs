@@ -4,8 +4,13 @@ Problem:
 When you update your application using a Deployment, Kubernetes may:
 Terminate old pods
 Then create new pods
-
 But if the new pods aren't ready yet, and the old ones are already gone → ⚠️ Application downtime.
+
+Solution:
+
+Configure the deployment's strategy to use RollingUpdate.
+Set maxUnavailable to 0 and maxSurge to a higher value.
+Ensure readiness probes are correctly configured to verify pod readiness before marking it as available.
 
 Why Does This Happen?
 This usually happens when:
