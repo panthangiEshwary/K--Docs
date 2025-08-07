@@ -1,0 +1,98 @@
+Pending Pods Due to Node Constraints
+
+Pods are stuck in Pending state and never start. When you check with:
+kubectl get pods
+
+Solution:
+Check the pod’s resource requests and limits.
+Scale the cluster by adding more nodes.
+Use the kubectl describe pod command to examine event logs.
+
+Root Cause:
+Kubernetes is unable to schedule the pod on any available node due to:
+Not enough CPU or memory available
+Pods requesting more resources than what nodes can provide
+No resource limits defined, and nodes can't predict the requirements
+
+- kubectl describe pod myapp-xyz
+- Check the Events section at the bottom:
+Events:
+  Warning  FailedScheduling  scheduler  0/1 nodes are available: 
+  Insufficient cpu, Insufficient memory
+This confirms node resource exhaustion
+
+ Example: Pod that Goes to Pending State (Due to High Resource Requests)
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: high-resource-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: high-resource
+  template:
+    metadata:
+      labels:
+        app: high-resource
+    spec:
+      containers:
+      - name: resource-hog
+        image: nginx
+        resources:
+          requests:
+            cpu: "8"         # Excessive CPU
+            memory: "16Gi"   # Excessive Memory
+          limits:
+            cpu: "10"
+            memory: "20Gi"
+
+Test This
+Save this as high-resource.yaml
+Apply it: kubectl apply -f high-resource.yaml
+Check pod status: kubectl get pods
+You'll see:
+NAME                                READY   STATUS    RESTARTS   AGE
+high-resource-app-xxxxxxx           0/1     Pending   0          5s
+Describe the pod: kubectl describe pod high-resource-app-xxxxxxx
+Look for an error like: 0/1 nodes are available: Insufficient cpu, Insufficient memory
+
+
+FIX:
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: low-resource-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: low-resource
+  template:
+    metadata:
+      labels:
+        app: low-resource
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+        resources:
+          requests:
+            cpu: "250m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "256Mi"
+
+Apply with: kubectl apply -f low-resource.yaml 
+This should run fine on most nodes.
+
+
+
+OR: Scale the Cluster
+If reducing resource requests isn't an option:
+
+In Minikube:
+ minikube start --cpus=4 --memory=8g
