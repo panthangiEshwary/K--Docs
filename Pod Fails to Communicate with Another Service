@@ -1,0 +1,144 @@
+ Pod Fails to Communicate with Another Service
+Problem: A pod cannot connect to another service despite correct service and endpoint configurations.
+
+Problem
+A pod (e.g., frontend) tries to connect to another service (e.g., backend), but the connection fails — even though:
+
+The Service exists
+The Endpoint is populated
+DNS resolution is working
+Still, the pod gets errors like:
+
+Connection refused
+Timeout
+Unable to resolve host\\
+
+Solution:
+Verify network policies are not blocking traffic.
+Check service selectors and pod labels for mismatches.
+Test connectivity using curl or ping from within the pod.
+
+
+Check Network Policies
+If you are using NetworkPolicy, it may be blocking pod-to-pod communication.
+
+▶️ Check for existing policies:
+kubectl get networkpolicies --all-namespaces
+
+ If any are defined:
+Ensure your policy allows ingress to the destination pods.
+Example: allow all traffic in namespace:
+
+Step 2: Verify Pod Labels Match Service Selectors
+Ensure the Service selector exactly matches the labels on the pods it targets.
+
+Check Service:
+kubectl get service my-service -o yaml
+
+Check labels on pods:
+kubectl get pods --show-labels
+
+They must match exactly or the Service will have no endpoints.
+
+Check endpoints:
+kubectl get endpoints my-service
+
+Step 3: Test DNS and Connectivity Inside Pod
+
+You can exec into the pod and test communication.
+kubectl exec -it <source-pod> -- /bin/sh
+
+
+ Solution: Step-by-Step Troubleshooting
+
+Step 1: Verify Service Exists
+Run:
+kubectl get svc
+Make sure the service (e.g., backend) is listed.
+
+Step 2: Check Endpoints
+Even if the service exists, it might have no backend pods. Check:
+kubectl get endpoints backend
+if ENDPOINTS is <none>, the service can't route traffic — meaning pods behind the service are:
+Not Running
+Not Ready
+Mismatch in selector
+
+Step 3: Describe Service
+kubectl describe svc backend
+
+Check:
+Selector matches the labels on the pod
+Port and targetPort are correct
+
+Step 4: Check Pod DNS
+From the calling pod (e.g., frontend), run:
+kubectl exec -it <frontend-pod> -- nslookup backend
+or
+kubectl exec -it <frontend-pod> -- curl backend:5000
+
+If this fails:
+The DNS service may not be running (kube-dns or coredns)
+The port is incorrect
+
+backend-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend-pod  # ❌ Intentional wrong label
+  template:
+    metadata:
+      labels:
+        app: backend     # ❌ Label doesn't match selector
+    spec:
+      containers:
+      - name: backend
+        image: python:3.9-slim
+        command: ["python", "-m", "http.server", "5000"]
+        ports:
+        - containerPort: 5000
+
+backend-service.yaml
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+spec:
+  selector:
+    app: backend       # ✔ This matches pod label (but selector mismatch above)
+  ports:
+  - port: 5000
+    targetPort: 5000
+
+frontend.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: frontend
+spec:
+  containers:
+  - name: curl
+    image: curlimages/curl
+    command: ["sleep", "3600"]
+
+
+kubectl apply -f backend-deployment.yaml
+kubectl apply -f backend-service.yaml
+kubectl apply -f frontend.yaml
+
+
+Update backend-deployment.yaml selector to:
+selector:
+  matchLabels:
+    app: backend
+
+
+
+
+
