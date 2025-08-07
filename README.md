@@ -98,19 +98,19 @@ Worker Nodes (Minions): Run the application containers inside Pods.
 **1. Control Plane (Master Node)**
 The brain of Kubernetes. It manages the cluster.
 
-kube-apiserver: Entry point for commands. Exposes the Kubernetes API. All requests go through this.
-etcd: A key-value store. Stores the cluster's state/configuration.
-kube-scheduler: Decides which node to place a new Pod on.
-kube-controller-manager: Ensures desired state (like checking if replicas are up, restarting failed pods).
-cloud-controller-manager: Interacts with the cloud provider (e.g., AWS, GCP) to manage load balancers, volumes, etc.
+**kube-apiserver**: Entry point for commands. Exposes the Kubernetes API. All requests go through this.
+**etcd:** A key-value store. Stores the cluster's state/configuration.
+**kube-scheduler**: Decides which node to place a new Pod on.
+**kube-controller-manager**: Ensures desired state (like checking if replicas are up, restarting failed pods).
+**cloud-controller-manager**: Interacts with the cloud provider (e.g., AWS, GCP) to manage load balancers, volumes, etc.
 
 **2. Worker Nodes**
 They actually run your application.
 
-kubelet: Talks to the master. Ensures containers are running as expected on the node.
-kube-proxy: Handles network routing and load balancing.
-Container Runtime: Software that runs containers (e.g., Docker, containerd).
-Pods: The smallest unit in Kubernetes. Each Pod holds one or more containers.
+**kubelet:** Talks to the master. Ensures containers are running as expected on the node.
+**kube-proxy:** Handles network routing and load balancing.
+**Container Runtime:** Software that runs containers (e.g., Docker, containerd).
+**Pods:** The smallest unit in Kubernetes. Each Pod holds one or more containers.
 
 **3. Other Important Concepts**
 Deployment: Defines how to run and manage replicas of an application.
@@ -120,16 +120,16 @@ ConfigMap & Secret: Inject config values or sensitive data (like passwords) into
 
 API Primitives
 These are the fundamental objects you interact with to manage your applications.
-Pods: The smallest deployable unit. A Pod is a group of one or more containers that share storage and networking resources.
-ReplicaSets: Ensures a specific number of Pod replicas are running at all times.
-Deployments: Manages Pods and ReplicaSets, providing declarative updates and rollbacks for your applications.
-StatefulSets: Manages stateful applications, ensuring stable network identities and persistent storage for each Pod.
-DaemonSets: Ensures that a copy of a Pod runs on every selected node in the cluster.
+**Pods**: The smallest deployable unit. A Pod is a group of one or more containers that share storage and networking resources.
+**ReplicaSets**: Ensures a specific number of Pod replicas are running at all times.
+**Deployments**: Manages Pods and ReplicaSets, providing declarative updates and rollbacks for your applications.
+**StatefulSets:** Manages stateful applications, ensuring stable network identities and persistent storage for each Pod.
+**DaemonSets:** Ensures that a copy of a Pod runs on every selected node in the cluster.
 
 Services & Other Network Primitives
 These concepts manage communication within and outside the cluster.
 Services: An abstract way to expose an application running on a set of Pods. A Service provides a stable IP and DNS name, acting as a load balancer for the Pods.
-ClusterIP: Exposes the Service on an internal IP, only accessible from within the cluster.
+**ClusterIP**: Exposes the Service on an internal IP, only accessible from within the cluster.
 NodePort: Exposes the Service on a static port on each node's IP.
 LoadBalancer: Exposes the Service externally using a cloud provider's load balancer.
 Ingress: Manages external access to services, typically HTTP/HTTPS traffic. It provides features like load balancing and SSL termination.
